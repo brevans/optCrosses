@@ -83,8 +83,11 @@ def _opt_crosses(max_k, current_k, pairs, informative, opt_loci,
         opt_loci.append(opt_loci[-1].union(informative[next_pair]))
         added_loci.append(len(best_diff))
 
+    #update the pairs left
     pairs.remove(next_pair)
+    #add the pair to the list of optimal pairs
     opt_pairs.append(next_pair)
+
     #recursion!
     return _opt_crosses(max_k, current_k, pairs, informative, opt_loci, 
                         added_loci, opt_pairs)
@@ -96,7 +99,7 @@ def optimize_crosses(max_k, pairs, informative):
     pairs_copy = set(pairs)
     return _opt_crosses(max_k, 0, pairs_copy, informative, [], [], [])
 
-def main():
+if __name__ == '__main__':
     #business time.
 
     #read in the possible mating pairs to test as tuples
@@ -108,26 +111,28 @@ def main():
     #get all locus names, loci informative for each cross
     informative, loci = read_genotypes(sys.argv[1], pairs)
 
+    #get the loci captured at each k, the number of added loci,
+    #and the pairs decending order of how many more loci they add
     shared_loci, added_loci, best_pairs = optimize_crosses(6, pairs, 
                                                            informative)
 
+    #labels for pairs
     best_pairs_labels=["{0} x {1}".format(*x) for x in best_pairs]
 
+    #plot results
     fig = plt.figure(figsize = (8,8))
     ax1 = plt.subplot2grid((3,3), (0,0), colspan = 3, rowspan = 2)
     ax1.set_title('Shared Loci in Top Three Pairs', fontsize = 26)
-
-    venn3_unweighted(shared_loci[:3], set_labels = best_pairs_labels[:3], 
-                     ax=ax1)
+    #venn diagram on top
+    venn3_unweighted([informative[x] for x in best_pairs[:3]], 
+                     set_labels = best_pairs_labels[:3], ax=ax1)
+    #bar chart on bottom
     ax2 = plt.subplot2grid((3,3), (2,0), colspan=3)
-    ax2.bar(range(len(added_loci)), added_loci)
+    ax2.bar(range(len(added_loci[:8])), added_loci[:8])
     ax2.set_ylabel('Number of Loci')
     ax2.set_title('Added Informative Loci Per Pair', fontsize = 26)
-    ax2.set_xticklabels(best_pairs_labels, rotation = 17 )
-
+    ax2.set_xticklabels(best_pairs_labels[:8], rotation = 17 )
+    #add a bit of extra space
     fig.subplots_adjust(hspace=.44)
     fig.savefig('summmary.pdf')
     plt.show()
-
-if __name__ == '__main__':
-    main()
